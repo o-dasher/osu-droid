@@ -9,6 +9,7 @@ import java.util.Random;
 
 import ru.nsu.ccfit.zuev.osu.Config;
 import ru.nsu.ccfit.zuev.osu.game.GameHelper;
+import ru.nsu.ccfit.zuev.osu.game.cursor.flashlight.FlashLightEntity;
 import ru.nsu.ccfit.zuev.osu.game.mods.GameMod;
 import ru.nsu.ccfit.zuev.osu.online.OnlineManager;
 
@@ -45,6 +46,12 @@ public class StatisticV2 implements Serializable {
     private int maxObjectsCount = 0;
     private int maxHighestCombo = 0;
     private int bonusScore = 0;
+    private float flFollowDelay = FlashLightEntity.defaultMoveDelayS;
+    private int positiveTotalOffsetSum;
+    private float positiveHitOffsetSum;
+    private int negativeTotalOffsetSum;
+    private float negativeHitOffsetSum;
+    private float unstableRate;
 
     public StatisticV2() {
         random = new Random();
@@ -138,7 +145,7 @@ public class StatisticV2 implements Serializable {
     public int getAutoTotalScore() {
         float mult = 1;
         for (GameMod m : mod) {
-            if (m.typeAuto) {
+            if (m.unranked) {
                 continue;
             }
             mult *= m.scoreMultiplier;
@@ -642,8 +649,55 @@ public class StatisticV2 implements Serializable {
         return enableForceAR;
     }
 
+    public void setFLFollowDelay(float delay) {
+        flFollowDelay = delay;
+    }
+
+    public float getFLFollowDelay() {
+        return flFollowDelay;
+    }
+
     public void setEnableForceAR(boolean t){
         enableForceAR = t;
+    }
+
+    public float getUnstableRate() {
+        return unstableRate;
+    }
+
+    public void addHitOffset(float accuracy) {
+        float msAccuracy = accuracy * 1000;
+
+        // Update hit offset
+        if (accuracy >= 0) {
+            positiveHitOffsetSum += msAccuracy;
+            positiveTotalOffsetSum++;
+        } else {
+            negativeHitOffsetSum += msAccuracy;
+            negativeTotalOffsetSum++;
+        }
+
+        // Update unstable rate
+        // Reference: https://math.stackexchange.com/questions/775391/can-i-calculate-the-new-standard-deviation-when-adding-a-value-without-knowing-t
+        int totalOffsetSum = positiveTotalOffsetSum + negativeTotalOffsetSum;
+        float hitOffsetSum = positiveHitOffsetSum + negativeHitOffsetSum;
+
+        if (totalOffsetSum > 1) {
+            float avgOffset = hitOffsetSum / totalOffsetSum;
+
+            unstableRate = 10 * (float) Math.sqrt(
+                ((totalOffsetSum - 1) * Math.pow(unstableRate / 10, 2) +
+                    (msAccuracy - avgOffset / totalOffsetSum) * (msAccuracy - (avgOffset - msAccuracy) / (totalOffsetSum - 1))) / totalOffsetSum
+            );
+        }
+    }
+    
+    public float getNegativeHitError() {
+        return negativeTotalOffsetSum == 0 ? 0 : negativeHitOffsetSum / negativeTotalOffsetSum;
+    }
+    
+    public float getPositiveHitError() {
+        return positiveTotalOffsetSum == 0 ? 0 : positiveHitOffsetSum / positiveTotalOffsetSum;
     }
     
     public float getSpeed(){
@@ -687,9 +741,13 @@ public class StatisticV2 implements Serializable {
         if (enableForceAR){
             builder.append(String.format(Locale.ENGLISH, "AR%.1f|", forceAR));
         }
+        if (flFollowDelay != FlashLightEntity.defaultMoveDelayS) {
+            builder.append(String.format(Locale.ENGLISH, "FLD%.2f|", flFollowDelay));
+        }
         if (builder.length() > 0){
             builder.delete(builder.length() - 1, builder.length());
         }
+
         return builder.toString();
     }
 
@@ -702,7 +760,9 @@ public class StatisticV2 implements Serializable {
             if (str.startsWith("AR")){
                 enableForceAR = true;
                 forceAR = Float.parseFloat(str.substring(2));
-                continue;
+            }
+            if (str.startsWith("FLD")) {
+                flFollowDelay = Float.parseFloat(str.substring(3));
             }
         }
     }
