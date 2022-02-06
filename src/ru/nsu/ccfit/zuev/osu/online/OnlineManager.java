@@ -26,7 +26,7 @@ import ru.nsu.ccfit.zuev.osu.helper.MD5Calcuator;
 import ru.nsu.ccfit.zuev.osu.online.PostBuilder.RequestException;
 
 public class OnlineManager {
-    public static final String hostname = "osudroid.moe";
+    public static final String hostname = "osu-droid-x-web.vercel.app";
     public static final String endpoint = "https://" + hostname + "/api/";
     private static final String onlineVersion = "29";
 
@@ -175,6 +175,7 @@ public class OnlineManager {
         post.addParam("password", MD5Calcuator.getStringMD5(password + "taikotaiko"));
         post.addParam("email", email);
         post.addParam("deviceID", deviceID);
+        post.addParam("sign", "");
 
         ArrayList<String> response = sendRequest(post, endpoint + "register.php");
 
