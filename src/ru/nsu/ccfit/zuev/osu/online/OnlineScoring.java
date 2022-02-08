@@ -180,8 +180,9 @@ public class OnlineScoring {
 
                         if (OnlineManager.getInstance().getFailMessage().length() > 0) {
                             ToastLogger.showText(OnlineManager.getInstance().getFailMessage(), true);
-                            if (OnlineManager.getInstance().getFailMessage().equals("Invalid record data"))
+                            if (OnlineManager.getInstance().getFailMessage().equals("Invalid record data") || OnlineManager.getInstance().getFailMessage().startsWith("Failed to submit score."))
                                 i = attemptCount;
+
                         } else if (success) {
                             updatePanels();
                             OnlineManager mgr = OnlineManager.getInstance();

@@ -8,7 +8,7 @@ public enum Mod {
     HARDROCK(4, "Hardrock", "hr"),
     SUDDEN_DEATH(5, "Sudden Death", "sd"),
     DOUBLE_TIME(6, "Double Time", "dt"),
-    RELAX(7, "Relax", "rx", false),
+    RELAX(7, "Relax", "rx"),
     HALF_TIME(8, "Half Time", "ht"),
     NIGHTCORE(9, "Nightcore", "nc"),
     FLASHLIGHT(10, "Flashlight", "fl"),
